@@ -3,21 +3,22 @@
 **Candidate Name:** Harshit  
 **Position:** Python Backend Developer  
 **Date:** August 12, 2026  
+**Repository URL:** [https://github.com/dverrma1312/HaBot-Booking](https://github.com/dverrma1312/HaBot-Booking)
 
 ---
 
 ## 📌 Project Overview & Context
-HabotConnect is a digital platform connecting parents with Learning Support Assistants (LSAs) for children with learning difficulties. This repository contains a production-ready, modular RESTful API prototype built on **Python**, **Django**, and **Django REST Framework (DRF)**.
+HabotConnect is a 100% remote digital platform connecting parents with Learning Support Assistants (LSAs) for children with learning difficulties. This repository contains a production-ready, lightweight RESTful API prototype built on **Python**, **Django**, and **Django REST Framework (DRF)**.
 
 Key Features & Engineering Deliverables:
-* **Normalized & Indexed Database Schema:** Entities representing `Parent`, `LearningSupportAssistant`, `Skill`, `Booking`, and `Payment`.
-* **High-Performance LSA Search Query:** Optimized endpoint resolving the **N+1 database query problem** via `prefetch_related('skills')`.
+* **Normalized & Indexed Database Schema:** Relational entities representing `Parent`, `LearningSupportAssistant`, `Skill`, `Booking`, and `Payment`.
+* **High-Performance LSA Search Query:** Smart search endpoint resolving the **N+1 database query problem** via `prefetch_related('skills')`.
 * **Robust Double-Booking Prevention:** Serializer validation enforcing mathematical overlap checks ($S_{db} < E_{new} \land E_{db} > S_{new}$).
 * **Third-Party Mock Payment Integration:** External integration using Python `requests` with exception handling (`ConnectionError`, `Timeout`) and logging.
 * **Automated Webhook Endpoint:** Receives payment events and dynamically updates `Payment` and `Booking` statuses atomically (`SUCCESSFUL` ➔ `CONFIRMED`, `FAILED` ➔ `CANCELLED`).
 * **Automated Unit Test Suite:** 6 comprehensive unit tests using DRF's `APITestCase`.
 * **CI/CD Integration:** GitHub Actions workflow (`.github/workflows/test.yml`) running automated tests on every push.
-* **Interactive Frontend Showcase Dashboard:** A dark-mode UI accessible at `http://127.0.0.1:8000/` for live API testing and demonstration.
+* **Interactive Frontend Showcase Dashboard:** A dark-mode UI accessible at `http://127.0.0.1:8000/` featuring 1-click **Seed Sample Data** and **Clear Database** controls.
 
 ---
 
@@ -112,38 +113,64 @@ if overlapping_query.exists():
 | Method | Endpoint | Description | Status Codes |
 |---|---|---|---|
 | `POST` | `/api/v1/bookings/` | Create a new booking request with overlap validation | `201 Created`, `400 Bad Request` |
-| `GET` | `/api/v1/lsas/search/` | Search available LSAs by skill or username (N+1 optimized) | `200 OK`, `404 Not Found` |
+| `GET` | `/api/v1/lsas/search/` | Smart search LSAs by skill or username (N+1 optimized) | `200 OK`, `404 Not Found` |
 | `POST` | `/api/v1/payments/initiate/` | Mock third-party payment gateway integration | `201 Created`, `400 Bad Request` |
 | `POST` | `/api/v1/payments/webhook/` | Automated payment success/failure state listener | `200 OK`, `400 Bad Request` |
+| `POST` | `/api/v1/seed/` | 1-Click seed sample database data | `200 OK` |
+| `POST` | `/api/v1/reset/` | 1-Click clear database and reset ID sequences to 1 | `200 OK` |
 
 ---
 
-## ⚙️ Setup & Local Installation
+## 💻 How to Run This Project on Any Laptop (Step-by-Step)
 
-1. **Activate Virtual Environment:**
-   ```bash
-   source venv/bin/activate
-   ```
-2. **Install Dependencies:**
-   ```bash
-   pip install django djangorestframework django-filter requests
-   ```
-3. **Run Migrations:**
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-4. **Run Server:**
-   ```bash
-   python manage.py runserver
-   ```
-5. **Interactive Showcase UI:**
-   Open `http://127.0.0.1:8000/` in your browser.
+Follow these steps to get the project up and running on any macOS, Linux, or Windows machine in under 2 minutes:
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/dverrma1312/HaBot-Booking.git
+cd HaBot-Booking
+```
+
+### 2. Set Up Python Virtual Environment
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate on macOS/Linux:
+source venv/bin/activate
+
+# Activate on Windows (Command Prompt):
+# venv\Scripts\activate.bat
+
+# Activate on Windows (PowerShell):
+# venv\Scripts\Activate.ps1
+```
+
+### 3. Install Dependencies
+```bash
+pip install django djangorestframework django-filter requests
+```
+
+### 4. Run Database Migrations
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### 5. Launch Development Server
+```bash
+python manage.py runserver
+```
+
+### 6. Test & Demo via Interactive Dashboard
+* Open **`http://127.0.0.1:8000/`** in your browser.
+* Click the **"🌱 Seed Sample Data"** button at the top right to instantly populate test Parents, LSAs, and Skills into SQLite!
+* Try searching LSAs by skill (`Autism Support`) or username (`sarah`), creating bookings, initiating payments, and triggering webhooks live.
 
 ---
 
-## 🧪 Running Automated Tests
+## 🧪 Running Automated Unit Tests
 ```bash
 python manage.py test
 ```
-All 6 tests in `allinone/tests.py` execute inside an isolated test database and report success.
+All 6 tests in `allinone/tests.py` execute inside an isolated test database and report success (`OK`).
