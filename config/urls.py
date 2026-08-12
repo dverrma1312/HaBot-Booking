@@ -1,8 +1,9 @@
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import path, include
+from allinone.views import dashboard_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('allinone.urls')),  # ✅ Include ONCE with 'api/' prefix
-    path('api-payment/', include('allinone.urls')),  # ✅ Include ONCE with 'api-payment/' prefix
+    path('', dashboard_view, name='dashboard'),
+    path('api/', include('allinone.urls')),
 ]

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HabotConnect — LSA Service Booking Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-card: rgba(18, 26, 41, 0.75);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
+            --accent-red: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(at 10% 10%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        header {
+            max-width: 1200px;
+            margin: 0 auto 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-card);
+            padding-bottom: 1.5rem;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+        }
+
+        .brand-title h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-title p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .status-badge {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--accent-green);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-green);
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .endpoint-tag {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .tag-post { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
+        .tag-get { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        input, select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 0.65rem 0.85rem;
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent-blue);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--accent-green), #059669);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--accent-red), #dc2626);
+        }
+
+        .response-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: #38bdf8;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .lsa-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .lsa-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-card);
+            padding: 0.75rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .skill-badge {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            display: inline-block;
+            margin-right: 0.25rem;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <div class="brand-logo">H</div>
+            <div class="brand-title">
+                <h1>HabotConnect</h1>
+                <p>LSA Service Booking Platform — Interactive API Showcase</p>
+            </div>
+        </div>
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            API Online (/api/v1/)
+        </div>
+    </header>
+
+    <main>
+        <!-- Card 1: LSA Search (Optimized Query) -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">🔍 Search Available LSAs</div>
+                <div class="endpoint-tag tag-get">GET /api/v1/lsas/search/</div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                Fetches active LSAs filtered by skill. Optimized using <code>prefetch_related('skills')</code> to eliminate N+1 queries.
+            </p>
+            <div class="form-group">
+                <label>Filter by Skill Name</label>
+                <input type="text" id="skillQuery" placeholder="e.g. Autism Support, Speech Therapy">
+            </div>
+            <button class="btn" onclick="fetchLSAs()">Search LSAs</button>
+            
+            <div class="lsa-grid" id="lsaResults">
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">Click search to load available LSAs...</div>
+            </div>
+        </div>
+
+        <!-- Card 2: Create Booking (Overlap Validation) -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">📅 Create Booking</div>
+                <div class="endpoint-tag tag-post">POST /api/v1/bookings/</div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                Creates a booking slot. Evaluates start/end times against DB to enforce double-booking prevention.
+            </p>
+            <div class="form-group">
+                <label>Parent Email</label>
+                <input type="email" id="parentEmail" value="john@example.com">
+            </div>
+            <div class="form-group">
+                <label>LSA ID</label>
+                <input type="number" id="lsaId" value="1">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <div class="form-group">
+                    <label>Start Time (ISO)</label>
+                    <input type="text" id="startTime" value="2026-08-20T10:00:00Z">
+                </div>
+                <div class="form-group">
+                    <label>End Time (ISO)</label>
+                    <input type="text" id="endTime" value="2026-08-20T12:00:00Z">
+                </div>
+            </div>
+            <button class="btn" onclick="createBooking()">Create Booking</button>
+            <div class="response-box" id="bookingResponse">// Booking API Response...</div>
+        </div>
+
+        <!-- Card 3: Initiate Payment (3rd Party Integration) -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">💳 Initiate Payment</div>
+                <div class="endpoint-tag tag-post">POST /api/v1/payments/initiate/</div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                Communicates with mock gateway via Python <code>requests</code> to generate transaction reference.
+            </p>
+            <div class="form-group">
+                <label>Booking ID</label>
+                <input type="number" id="payBookingId" value="1">
+            </div>
+            <div class="form-group">
+                <label>Amount ($)</label>
+                <input type="number" id="payAmount" value="50.00">
+            </div>
+            <button class="btn" onclick="initiatePayment()">Initiate Payment</button>
+            <div class="response-box" id="paymentResponse">// Payment Response...</div>
+        </div>
+
+        <!-- Card 4: Payment Webhook Simulator -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">⚡ Payment Webhook Listener</div>
+                <div class="endpoint-tag tag-post">POST /api/v1/payments/webhook/</div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                Listens to payment gateway events and dynamically updates Booking and Payment states.
+            </p>
+            <div class="form-group">
+                <label>Transaction Reference</label>
+                <input type="text" id="webhookTxnRef" placeholder="TXN_1_MOCK">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <button class="btn btn-success" onclick="triggerWebhook('success')">Simulate Success</button>
+                <button class="btn btn-danger" onclick="triggerWebhook('failed')">Simulate Failure</button>
+            </div>
+            <div class="response-box" id="webhookResponse">// Webhook Listener Output...</div>
+        </div>
+    </main>
+
+    <script>
+        async function fetchLSAs() {
+            const skill = document.getElementById('skillQuery').value;
+            const url = skill ? `/api/v1/lsas/search/?skill=${encodeURIComponent(skill)}` : '/api/v1/lsas/search/';
+            const resContainer = document.getElementById('lsaResults');
+            
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (res.ok && Array.isArray(data)) {
+                    if (data.length === 0) {
+                        resContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.85rem;">No active LSAs found.</div>`;
+                        return;
+                    }
+                    resContainer.innerHTML = data.map(lsa => `
+                        <div class="lsa-item">
+                            <div>
+                                <strong style="color: var(--text-primary); font-size: 0.95rem;">${lsa.username}</strong>
+                                <div style="color: var(--text-secondary); font-size: 0.8rem;">ID: ${lsa.id} | $${lsa.rate}/hr</div>
+                                <div>${lsa.skills.map(s => `<span class="skill-badge">${s.skill_name}</span>`).join('')}</div>
+                            </div>
+                            <span style="color: var(--accent-green); font-size: 0.8rem; font-weight: 600;">Active</span>
+                        </div>
+                    `).join('');
+                } else {
+                    resContainer.innerHTML = `<div style="color: var(--accent-red); font-size: 0.85rem;">${JSON.stringify(data)}</div>`;
+                }
+            } catch (err) {
+                resContainer.innerHTML = `<div style="color: var(--accent-red); font-size: 0.85rem;">Error: ${err.message}</div>`;
+            }
+        }
+
+        async function createBooking() {
+            const payload = {
+                parent: document.getElementById('parentEmail').value,
+                lsa: parseInt(document.getElementById('lsaId').value),
+                booking_date: "2026-08-20",
+                booking_time: "10:00:00",
+                starttime: document.getElementById('startTime').value,
+                endtime: document.getElementById('endTime').value
+            };
+            const box = document.getElementById('bookingResponse');
+            
+            try {
+                const res = await fetch('/api/v1/bookings/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                box.innerText = JSON.stringify(data, null, 2);
+                box.style.color = res.ok ? '#34d399' : '#f87171';
+            } catch (err) {
+                box.innerText = "Error: " + err.message;
+            }
+        }
+
+        async function initiatePayment() {
+            const payload = {
+                booking_id: parseInt(document.getElementById('payBookingId').value),
+                amount: parseFloat(document.getElementById('payAmount').value)
+            };
+            const box = document.getElementById('paymentResponse');
+            
+            try {
+                const res = await fetch('/api/v1/payments/initiate/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                box.innerText = JSON.stringify(data, null, 2);
+                box.style.color = res.ok ? '#34d399' : '#f87171';
+                
+                if (data.transaction_reference) {
+                    document.getElementById('webhookTxnRef').value = data.transaction_reference;
+                }
+            } catch (err) {
+                box.innerText = "Error: " + err.message;
+            }
+        }
+
+        async function triggerWebhook(statusType) {
+            const txnRef = document.getElementById('webhookTxnRef').value;
+            const box = document.getElementById('webhookResponse');
+            
+            if (!txnRef) {
+                alert("Please enter or generate a Transaction Reference first!");
+                return;
+            }
+
+            const payload = {
+                transaction_reference: txnRef,
+                status: statusType
+            };
+            
+            try {
+                const res = await fetch('/api/v1/payments/webhook/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                box.innerText = JSON.stringify(data, null, 2);
+                box.style.color = res.ok ? '#34d399' : '#f87171';
+            } catch (err) {
+                box.innerText = "Error: " + err.message;
+            }
+        }
+
+        // Auto load LSAs on load
+        fetchLSAs();
+    </script>
+</body>
+</html>

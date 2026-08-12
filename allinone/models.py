@@ -1,59 +1,89 @@
 from django.db import models
 
-class skills(models.Model):
-    skill_name = models.CharField(max_length=100)
+class Skill(models.Model):
+    skill_name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.skill_name
-class parents(models.Model):
-    parent_name = models.CharField(max_length=100)
-    parent_email = models.EmailField(primary_key=True)
-    parent_phone = models.CharField(max_length=15)
+
+
+class Parent(models.Model):
+    parent_name = models.CharField(max_length=255)
+    parent_email = models.EmailField(unique=True)
+    parent_phone = models.CharField(max_length=20, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.parent_name
+        return f"{self.parent_name} ({self.parent_email})"
 
-class learningsupportassitant(models.Model):
+
+class LearningSupportAssistant(models.Model):
     username = models.CharField(max_length=100, unique=True)
     password = models.CharField(max_length=100)
-    email = models.EmailField()
-    phone = models.CharField(max_length=15)
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=20, blank=True)
     rate = models.DecimalField(max_digits=6, decimal_places=2)
-    created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
-    skills = models.ManyToManyField(skills, related_name='lsas')
-
-    class Meta:                                          
-        indexes = [models.Index(fields=['is_active'])]  
-
-    def __str__(self):
-        return self.username                          
-
-class booking(models.Model):
-    parent = models.ForeignKey(parents, on_delete=models.PROTECT)
-    lsa = models.ForeignKey(learningsupportassitant, on_delete=models.PROTECT)
-    booking_date = models.DateField()
-    booking_time = models.TimeField()
+    skills = models.ManyToManyField(Skill, related_name='lsas')
     created_at = models.DateTimeField(auto_now_add=True)
-    starttime = models.DateTimeField()
-    endtime = models.DateTimeField()
-    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('confirmed', 'Confirmed'), ('cancelled', 'Cancelled')], default='pending')
 
-    class meta:
-        index = [ models.Index(fields=['starttime, endtime '])]
-
-    def __str__(self):
-        return f"Booking by {self.parent.parent_name} with {self.lsa} on {self.booking_date} at {self.booking_time}"
-
-class payments(models.Model):
-    booking = models.ForeignKey(booking, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=6, decimal_places=2)
-    payment_date = models.DateTimeField(auto_now_add=True)
-    transaction_id = models.CharField(max_length=100, unique=True)
-
-    class meta:
-        index = [ models.Index(fields=['transaction_id'])]
+    class Meta:
+        indexes = [
+            models.Index(fields=['is_active']),
+        ]
 
     def __str__(self):
-        return f"Payment of {self.amount} for booking {self.booking.id}"
+        return f"{self.username} (${self.rate}/hr)"
+
+
+class Booking(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING_PAYMENT', 'Pending Payment'),
+        ('CONFIRMED', 'Confirmed'),
+        ('CANCELLED', 'Cancelled'),
+        ('COMPLETED', 'Completed'),
+    ]
+
+    parent = models.ForeignKey(Parent, on_delete=models.CASCADE, related_name='bookings')
+    lsa = models.ForeignKey(LearningSupportAssistant, on_delete=models.CASCADE, related_name='bookings')
+    booking_date = models.DateField(null=True, blank=True)
+    booking_time = models.TimeField(null=True, blank=True)
+    starttime = models.DateTimeField(db_index=True)
+    endtime = models.DateTimeField(db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING_PAYMENT')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['starttime', 'endtime']),
+            models.Index(fields=['status']),
+        ]
+
+    def __str__(self):
+        return f"Booking #{self.id} - LSA: {self.lsa.username} | Parent: {self.parent.parent_name} [{self.status}]"
+
+
+class Payment(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('SUCCESSFUL', 'Successful'),
+        ('FAILED', 'Failed'),
+    ]
+
+    booking = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name='payment')
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    transaction_reference = models.CharField(max_length=100, unique=True, db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Payment {self.transaction_reference} - ${self.amount} [{self.status}]"
+
+
+# Alias mappings for backwards compatibility with existing codebase
+skills = Skill
+parents = Parent
+learningsupportassitant = LearningSupportAssistant
+booking = Booking
+payments = Payment
