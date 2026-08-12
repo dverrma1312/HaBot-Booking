@@ -2,6 +2,7 @@ import logging
 import requests
 from django.shortcuts import render
 from django.db.models import Q
+from django.db import connection
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -101,7 +102,7 @@ def seed_data(request):
     l3.skills.add(s2, s4)
 
     return Response({
-        "message": "Sample database data seeded successfully!",
+        "message": "Sample database data seeded successfully! IDs start from 1.",
         "parents_count": Parent.objects.count(),
         "lsas_count": LearningSupportAssistant.objects.count(),
         "skills_count": Skill.objects.count()
@@ -111,15 +112,22 @@ def seed_data(request):
 # ─── CLEAR DATABASE HELPER (POST /api/v1/reset/) ─────────────────
 @api_view(['POST'])
 def clear_database(request):
-    """Wipes all rows from Payment, Booking, LSA, Parent, and Skill tables."""
+    """Wipes all rows and resets SQLite sequence counter so primary key IDs start at 1 again."""
     Payment.objects.all().delete()
     Booking.objects.all().delete()
     LearningSupportAssistant.objects.all().delete()
     Parent.objects.all().delete()
     Skill.objects.all().delete()
 
+    # Reset SQLite primary key auto-increment sequence back to 0/1
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM sqlite_sequence;")
+    except Exception as e:
+        logger.warning(f"Could not reset sqlite_sequence: {e}")
+
     return Response({
-        "message": "Database reset successfully! All records cleared.",
+        "message": "Database reset successfully! All records cleared and primary key IDs reset to 1.",
         "parents_count": 0,
         "lsas_count": 0,
         "bookings_count": 0
