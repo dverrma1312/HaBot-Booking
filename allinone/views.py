@@ -108,6 +108,24 @@ def seed_data(request):
     }, status=status.HTTP_200_OK)
 
 
+# ─── CLEAR DATABASE HELPER (POST /api/v1/reset/) ─────────────────
+@api_view(['POST'])
+def clear_database(request):
+    """Wipes all rows from Payment, Booking, LSA, Parent, and Skill tables."""
+    Payment.objects.all().delete()
+    Booking.objects.all().delete()
+    LearningSupportAssistant.objects.all().delete()
+    Parent.objects.all().delete()
+    Skill.objects.all().delete()
+
+    return Response({
+        "message": "Database reset successfully! All records cleared.",
+        "parents_count": 0,
+        "lsas_count": 0,
+        "bookings_count": 0
+    }, status=status.HTTP_200_OK)
+
+
 # ─── 3. THIRD-PARTY MOCK PAYMENT INITIATION ───────────────────────
 @api_view(['POST'])
 def initiate_payment(request):

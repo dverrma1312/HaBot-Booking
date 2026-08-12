@@ -10,9 +10,12 @@ urlpatterns = [
     path('lsas/search/', views.get_lsa, name='lsa-search'),
     path('v1/lsas/search/', views.get_lsa, name='v1-lsa-search'),
 
-    # Database Seeding Endpoint
+    # Database Helpers (Seed & Clear)
     path('seed/', views.seed_data, name='seed-data'),
     path('v1/seed/', views.seed_data, name='v1-seed-data'),
+
+    path('reset/', views.clear_database, name='reset-data'),
+    path('v1/reset/', views.clear_database, name='v1-reset-data'),
 
     # Payment Integration Endpoints
     path('payments/initiate/', views.initiate_payment, name='payment-initiate'),
