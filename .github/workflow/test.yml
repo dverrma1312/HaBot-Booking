@@ -1,0 +1,40 @@
+name: Django CI/CD Pipeline
+
+# Trigger the pipeline on every push or pull request to main/master branch
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Pull down your codebase onto GitHub's cloud Linux server
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Set up Python 3.12 on the server
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    # 3. Install your project dependencies
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install django djangorestframework django-filter requests
+
+    # 4. Run database migrations on the test server
+    - name: Run Migrations
+      run: |
+        python manage.py makemigrations
+        python manage.py migrate
+
+    # 5. Run your automated test suite!
+    - name: Run Unit Tests
+      run: |
+        python manage.py test
