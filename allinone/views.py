@@ -43,16 +43,16 @@ class BookingViewSet(viewsets.ModelViewSet):
 bookingsviewset = BookingViewSet
 
 
-# ─── 2. SMART LSA SEARCH ENDPOINT (GET /api/v1/lsas/search/) ──────
+# ─── 2. LSA SEARCH ENDPOINT (GET /api/v1/lsas/search/) ────────────
 @api_view(['GET'])
 def get_lsa(request):
     """
-    Smart LSA search endpoint resolving N+1 query problem using prefetch_related('skills').
-    Searches across both username AND skill name dynamically.
+    LSA search endpoint resolving N+1 query problem using prefetch_related('skills').
+    Supports searching by skill name or username.
     """
     search_term = (
-        request.query_params.get('query') or 
         request.query_params.get('skill') or 
+        request.query_params.get('query') or 
         request.query_params.get('skills') or 
         request.query_params.get('username')
     )
@@ -60,14 +60,14 @@ def get_lsa(request):
     if search_term:
         search_term = str(search_term).strip()
         lsas = LearningSupportAssistant.objects.prefetch_related('skills').filter(
-            Q(username__icontains=search_term) | Q(skills__skill_name__icontains=search_term),
+            Q(skills__skill_name__icontains=search_term) | Q(username__icontains=search_term),
             is_active=True
         ).distinct()
         
         if lsas.exists():
             serializer = LearningSupportAssistantSerializer(lsas, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response({"error": f"No active LSAs found matching '{search_term}'."}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": f"No active LSAs found for '{search_term}'."}, status=status.HTTP_404_NOT_FOUND)
 
     # Default: Return all active LSAs (Prefetched to eliminate N+1 queries)
     lsas = LearningSupportAssistant.objects.prefetch_related('skills').filter(is_active=True)
@@ -79,46 +79,10 @@ def get_lsa(request):
 lsa_search = get_lsa
 
 
-# ─── PARENT MANAGEMENT ENDPOINTS ──────────────────────────────────
-@api_view(['GET', 'POST'])
-def parent_list_create(request):
-    if request.method == 'GET':
-        parents_list = Parent.objects.all()
-        return Response(ParentSerializer(parents_list, many=True).data)
-    elif request.method == 'POST':
-        serializer = ParentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# ─── LSA REGISTRATION ENDPOINT ────────────────────────────────────
-@api_view(['GET', 'POST'])
-def lsa_list_create(request):
-    if request.method == 'GET':
-        lsas = LearningSupportAssistant.objects.prefetch_related('skills').all()
-        return Response(LearningSupportAssistantSerializer(lsas, many=True).data)
-    elif request.method == 'POST':
-        serializer = LearningSupportAssistantSerializer(data=request.data)
-        if serializer.is_valid():
-            lsa = serializer.save()
-            # If skill_names string passed in request
-            skill_names = request.data.get('skill_names')
-            if skill_names:
-                for name in str(skill_names).split(','):
-                    name = name.strip()
-                    if name:
-                        skill_obj, _ = Skill.objects.get_or_create(skill_name=name)
-                        lsa.skills.add(skill_obj)
-            return Response(LearningSupportAssistantSerializer(lsa).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# ─── SEED SAMPLE DATA ENDPOINT ─────────────────────────────────────
+# ─── SEED SAMPLE DATA HELPER (POST /api/v1/seed/) ─────────────────
 @api_view(['POST'])
 def seed_data(request):
-    """Populates test data into database with 1 click."""
+    """Seeds test data into SQLite database for quick testing."""
     s1, _ = Skill.objects.get_or_create(skill_name='Autism Support')
     s2, _ = Skill.objects.get_or_create(skill_name='Speech Therapy')
     s3, _ = Skill.objects.get_or_create(skill_name='ADHD Management')

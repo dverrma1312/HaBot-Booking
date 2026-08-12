@@ -6,15 +6,9 @@ urlpatterns = [
     path('bookings/', views.BookingViewSet.as_view({'post': 'create', 'get': 'list'}), name='bookings'),
     path('v1/bookings/', views.BookingViewSet.as_view({'post': 'create', 'get': 'list'}), name='v1-bookings'),
 
-    # LSA Search & Management Endpoints
+    # LSA Search Endpoint
     path('lsas/search/', views.get_lsa, name='lsa-search'),
     path('v1/lsas/search/', views.get_lsa, name='v1-lsa-search'),
-    path('lsas/create/', views.lsa_list_create, name='lsa-create'),
-    path('v1/lsas/create/', views.lsa_list_create, name='v1-lsa-create'),
-
-    # Parent Management Endpoints
-    path('parents/', views.parent_list_create, name='parents'),
-    path('v1/parents/', views.parent_list_create, name='v1-parents'),
 
     # Database Seeding Endpoint
     path('seed/', views.seed_data, name='seed-data'),
