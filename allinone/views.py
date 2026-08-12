@@ -1,6 +1,7 @@
 import logging
 import requests
 from django.shortcuts import render
+from django.db.models import Q
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -38,38 +39,35 @@ class BookingViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Alias for backward compatibility
+# Alias
 bookingsviewset = BookingViewSet
 
 
-# ─── 2. LSA SEARCH ENDPOINT (GET /api/v1/lsas/search/) ────────────
+# ─── 2. SMART LSA SEARCH ENDPOINT (GET /api/v1/lsas/search/) ──────
 @api_view(['GET'])
 def get_lsa(request):
     """
-    Optimized LSA search endpoint resolving N+1 query problem using prefetch_related('skills').
-    Supports filtering by skill name or username via query parameters.
+    Smart LSA search endpoint resolving N+1 query problem using prefetch_related('skills').
+    Searches across both username AND skill name dynamically.
     """
-    username = request.query_params.get('username')
-    skill_name = request.query_params.get('skill') or request.query_params.get('skills')
+    search_term = (
+        request.query_params.get('query') or 
+        request.query_params.get('skill') or 
+        request.query_params.get('skills') or 
+        request.query_params.get('username')
+    )
 
-    # Filter by Username
-    if username:
-        lsas = LearningSupportAssistant.objects.prefetch_related('skills').filter(username=username)
-        if lsas.exists():
-            serializer = LearningSupportAssistantSerializer(lsas, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response({"error": "No LSA found with that username."}, status=status.HTTP_404_NOT_FOUND)
-
-    # Filter by Skill Name
-    if skill_name:
+    if search_term:
+        search_term = str(search_term).strip()
         lsas = LearningSupportAssistant.objects.prefetch_related('skills').filter(
-            skills__skill_name__icontains=skill_name,
+            Q(username__icontains=search_term) | Q(skills__skill_name__icontains=search_term),
             is_active=True
         ).distinct()
+        
         if lsas.exists():
             serializer = LearningSupportAssistantSerializer(lsas, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response({"error": f"No LSAs found with skill '{skill_name}'."}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": f"No active LSAs found matching '{search_term}'."}, status=status.HTTP_404_NOT_FOUND)
 
     # Default: Return all active LSAs (Prefetched to eliminate N+1 queries)
     lsas = LearningSupportAssistant.objects.prefetch_related('skills').filter(is_active=True)
@@ -77,17 +75,78 @@ def get_lsa(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# Alias function name
+# Alias
 lsa_search = get_lsa
+
+
+# ─── PARENT MANAGEMENT ENDPOINTS ──────────────────────────────────
+@api_view(['GET', 'POST'])
+def parent_list_create(request):
+    if request.method == 'GET':
+        parents_list = Parent.objects.all()
+        return Response(ParentSerializer(parents_list, many=True).data)
+    elif request.method == 'POST':
+        serializer = ParentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ─── LSA REGISTRATION ENDPOINT ────────────────────────────────────
+@api_view(['GET', 'POST'])
+def lsa_list_create(request):
+    if request.method == 'GET':
+        lsas = LearningSupportAssistant.objects.prefetch_related('skills').all()
+        return Response(LearningSupportAssistantSerializer(lsas, many=True).data)
+    elif request.method == 'POST':
+        serializer = LearningSupportAssistantSerializer(data=request.data)
+        if serializer.is_valid():
+            lsa = serializer.save()
+            # If skill_names string passed in request
+            skill_names = request.data.get('skill_names')
+            if skill_names:
+                for name in str(skill_names).split(','):
+                    name = name.strip()
+                    if name:
+                        skill_obj, _ = Skill.objects.get_or_create(skill_name=name)
+                        lsa.skills.add(skill_obj)
+            return Response(LearningSupportAssistantSerializer(lsa).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ─── SEED SAMPLE DATA ENDPOINT ─────────────────────────────────────
+@api_view(['POST'])
+def seed_data(request):
+    """Populates test data into database with 1 click."""
+    s1, _ = Skill.objects.get_or_create(skill_name='Autism Support')
+    s2, _ = Skill.objects.get_or_create(skill_name='Speech Therapy')
+    s3, _ = Skill.objects.get_or_create(skill_name='ADHD Management')
+    s4, _ = Skill.objects.get_or_create(skill_name='Dyslexia Assistance')
+
+    p1, _ = Parent.objects.get_or_create(parent_email='john@example.com', defaults={'parent_name': 'John Doe', 'parent_phone': '1234567890'})
+    p2, _ = Parent.objects.get_or_create(parent_email='alice@example.com', defaults={'parent_name': 'Alice Smith', 'parent_phone': '9876543210'})
+
+    l1, _ = LearningSupportAssistant.objects.get_or_create(username='sarah', defaults={'email': 'sarah@example.com', 'rate': 25.00, 'is_active': True})
+    l1.skills.add(s1, s2)
+
+    l2, _ = LearningSupportAssistant.objects.get_or_create(username='david', defaults={'email': 'david@example.com', 'rate': 30.00, 'is_active': True})
+    l2.skills.add(s1, s3)
+
+    l3, _ = LearningSupportAssistant.objects.get_or_create(username='emily', defaults={'email': 'emily@example.com', 'rate': 28.00, 'is_active': True})
+    l3.skills.add(s2, s4)
+
+    return Response({
+        "message": "Sample database data seeded successfully!",
+        "parents_count": Parent.objects.count(),
+        "lsas_count": LearningSupportAssistant.objects.count(),
+        "skills_count": Skill.objects.count()
+    }, status=status.HTTP_200_OK)
 
 
 # ─── 3. THIRD-PARTY MOCK PAYMENT INITIATION ───────────────────────
 @api_view(['POST'])
 def initiate_payment(request):
-    """
-    Mock external service integration using Python 'requests' with exception handling & logging.
-    Initiates payment and creates a PENDING payment record.
-    """
     booking_id = request.data.get('booking_id')
     amount = request.data.get('amount')
 
@@ -99,7 +158,6 @@ def initiate_payment(request):
     except Booking.DoesNotExist:
         return Response({"error": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    # Integrate external mock payment gateway using Python requests
     transaction_ref = f"TXN_{booking_id}_MOCK"
     try:
         mock_response = requests.post(
@@ -122,7 +180,6 @@ def initiate_payment(request):
     except requests.exceptions.RequestException as e:
         logger.error(f"Payment gateway error: {e} — using fallback mock transaction reference.")
 
-    # Create or update Payment record
     payment_obj, created = Payment.objects.get_or_create(
         booking=booking_obj,
         defaults={
@@ -152,10 +209,6 @@ paymentgateway = initiate_payment
 # ─── 4. AUTOMATED PAYMENT WEBHOOK ENDPOINT ───────────────────────
 @api_view(['POST'])
 def payment_webhook(request):
-    """
-    Automated webhook endpoint listening to payment success/failure events.
-    Dynamically transitions Payment and Booking states.
-    """
     transaction_ref = request.data.get('transaction_reference') or request.data.get('transaction_id')
     event_status = request.data.get('status')
 
